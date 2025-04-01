@@ -17,5 +17,6 @@
     "forum_entry_point_urls":[
         "https://community.canvaslms.com/t5/Canvas-Question-Forum/bd-p/questions"
     ],
-    "html_storage_patd":"tmp/html"
+    "html_storage_patd":"tmp/html",
+    "base_url":"https://community.canvaslms.com"
 }
