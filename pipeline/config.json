@@ -1,0 +1,21 @@
+{
+    "kb_entry_point_urls":[
+        "https://community.canvaslms.com/t5/Canvas-Basics-Guide/tkb-p/basics",
+        "https://community.canvaslms.com/t5/Student-Guide/tkb-p/student",
+        "https://community.canvaslms.com/t5/Instructor-Guide/tkb-p/Instructor",
+        "https://community.canvaslms.com/t5/Observer-Guide/tkb-p/observer",
+        "https://community.canvaslms.com/t5/Admin-Guide/tkb-p/admin",
+        "https://community.canvaslms.com/t5/Troubleshooting/tkb-p/Troubleshooting",
+
+        "https://community.canvaslms.com/t5/Canvas-Student-iOS-Guide/tkb-p/student_ios",
+        "https://community.canvaslms.com/t5/Canvas-Student-Android-Guide/tkb-p/student_android",
+        "https://community.canvaslms.com/t5/Canvas-Teacher-iOS-Guide/tkb-p/teacher_ios",
+        "https://community.canvaslms.com/t5/Canvas-Teacher-Android-Guide/tkb-p/teacher_android",
+        "https://community.canvaslms.com/t5/Canvas-Parent-iOS-Guide/tkb-p/parent_ios",
+        "https://community.canvaslms.com/t5/Canvas-Parent-Android-Guide/tkb-p/parent_android"
+    ],
+    "forum_entry_point_urls":[
+        "https://community.canvaslms.com/t5/Canvas-Question-Forum/bd-p/questions"
+    ],
+    "html_storage_patd":"tmp/html"
+}
