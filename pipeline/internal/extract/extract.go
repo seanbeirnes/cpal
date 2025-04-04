@@ -18,6 +18,7 @@ import (
 const (
 	MAX_REQUESTS = 50
 	FPATH_TMP    = "tmp"
+	FPATH_RAW    = "raw"
 )
 
 const (
@@ -275,7 +276,7 @@ func makeMetadata(t *task) map[string]string {
 }
 
 func writeMdFile(t *task, markdown string) error {
-	mdPath := filepath.Join(FPATH_TMP, strconv.Itoa(t.taskId)+".md")
+	mdPath := filepath.Join(FPATH_TMP, FPATH_RAW, strconv.Itoa(t.taskId)+".md")
 	mdFile, err := os.Create(mdPath)
 	if err != nil {
 		return err
@@ -286,7 +287,7 @@ func writeMdFile(t *task, markdown string) error {
 }
 
 func writeJsonFile(t *task) error {
-	jsonPath := filepath.Join(FPATH_TMP, strconv.Itoa(t.taskId)+".json")
+	jsonPath := filepath.Join(FPATH_TMP, FPATH_RAW, strconv.Itoa(t.taskId)+".json")
 	jsonFile, err := os.Create(jsonPath)
 	if err != nil {
 		return err
