@@ -3,20 +3,21 @@ package extract
 import (
 	"encoding/json"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 
-	"golang.org/x/net/html"
-	"golang.org/x/net/html/atom"
+	htmltomarkdown "github.com/JohannesKaufmann/html-to-markdown/v2"
 	"github.com/PuerkitoBio/goquery"
 )
 
 const (
 	MAX_REQUESTS = 50
+	FPATH_TMP    = "tmp"
 )
 
 const (
@@ -36,6 +37,7 @@ type task struct {
 	taskType int
 	url      string
 	batchId  int
+	taskId   int
 }
 
 func LoadConfig(filename string) (*Config, error) {
@@ -75,6 +77,7 @@ func Run(config *Config) {
 	var wg sync.WaitGroup
 	ch := make(chan []task)
 	numBatches := 0
+	numTasks := 0
 
 	for len(queue) > 0 {
 		numRequests := 0
@@ -91,6 +94,8 @@ func Run(config *Config) {
 				newUrl := fmt.Sprintf("%s%s", config.BaseUrl, t.url)
 				t.url = newUrl
 			}
+			t.taskId = numTasks
+			numTasks++
 
 			wg.Add(1)
 			go func() {
@@ -119,77 +124,105 @@ func processTask(t task) []task {
 		fmt.Printf("[ERROR]: %s\n", err.Error())
 	}
 	defer res.Body.Close()
-	bytes, err := io.ReadAll(res.Body)
-	if err != nil {
-		log.Fatalf("error: %s\n", err.Error())
+	if res.StatusCode != 200 {
+		msg := fmt.Sprintf("[ERROR] Non-200 status code: %d", res.StatusCode)
+		fmt.Println(msg)
+		log.Println(msg)
 	}
-	data := string(bytes)
-	reader := strings.NewReader(data)
-	parseTree, err := html.Parse(reader)
+	doc, err := goquery.NewDocumentFromReader(res.Body)
 	if err != nil {
-		log.Fatalf("error: %s\n", err.Error())
+		log.Fatalf("[ERROR]: %s\n", err.Error())
+		fmt.Printf("[ERROR]: %s\n", err.Error())
 	}
 
 	switch t.taskType {
 	case TYPE_KB:
-		return handleKBTask(&t, parseTree)
+		return handleKBTask(&t, doc)
 	case TYPE_KB_EXTRACT:
-		handleKBExtractTask(&t, parseTree)
+		handleKBExtractTask(&t, doc)
 	case TYPE_FORUM:
-		return handleForumTask(&t, parseTree)
+		return handleForumTask(&t, doc)
 	default:
 		log.Fatalf("[ERROR] no handler for url %s", t.url)
 	}
 	return make([]task, 0, 0)
 }
 
-func handleKBTask(t *task, n *html.Node) []task {
+func handleKBTask(t *task, doc *goquery.Document) []task {
 	newTasks := make([]task, 0, 0)
 	fmt.Printf("[INFO] Batch [%d] Processing url %s\n", t.batchId, t.url)
 
-	nodes := make([]*html.Node, 10)
-	nodes = append(nodes, n)
-	for len(nodes) > 0 {
-		node := nodes[0]
-		nodes = nodes[1:]
+	selection := doc.Find(".toc-main")
+	selection.First().Find("a").Each(func(i int, s *goquery.Selection) {
+		url, _ := s.Attr("href")
+		newTasks = append(newTasks, task{url: strings.Trim(url, " "), taskType: TYPE_KB_EXTRACT})
+	})
 
-		if node == nil {
-			continue
-		}
+	return newTasks
+}
 
-		if node.Type == html.ElementNode && node.DataAtom == atom.Div {
-			for _, a := range node.Attr {
-				if a.Key != "class" || a.Val != "toc-main" {
-					continue
-				}
-				for descendant := range node.Descendants() {
-					if descendant.Type != html.ElementNode && descendant.DataAtom != atom.A {
-						continue
-					}
-					for _, a := range descendant.Attr {
-						if a.Key != "href" {
-							continue
-						}
-						newTasks = append(newTasks, task{url: strings.Trim(a.Val, " "), taskType: TYPE_KB_EXTRACT})
-					}
-				}
-			}
-		}
-
-		for child := node.FirstChild; child != nil; child = child.NextSibling {
-			nodes = append(nodes, child)
-		}
+func handleKBExtractTask(t *task, doc *goquery.Document) {
+	fmt.Printf("[INFO] Batch [%d] Extracting data from %s\n", t.batchId, t.url)
+	selection := doc.Find("#lia-main-aria-landmark")
+	html, err := selection.Html()
+	if err != nil {
+		log.Fatalf("error: %s\n", err.Error())
+	}
+	markdown, err := htmltomarkdown.ConvertString(html)
+	if err != nil {
+		log.Fatalf("error: %s\n", err.Error())
+	}
+	err = writeMdFile(t, markdown)
+	if err != nil {
+		msg := fmt.Sprintf("[ERROR] Could not write md file for %s\n", t.url)
+		log.Fatalln(msg)
+		fmt.Println(msg)
 	}
 
-	return newTasks
+	err = writeJsonFile(t)
+	if err != nil {
+		msg := fmt.Sprintf("[ERROR] Could not write json file for %s\n", t.url)
+		log.Fatalln(msg)
+		fmt.Println(msg)
+	}
 }
 
-func handleKBExtractTask(t *task, n *html.Node) {
-	fmt.Println(t.url)
-}
-
-func handleForumTask(t *task, n *html.Node) []task {
+func handleForumTask(t *task, doc *goquery.Document) []task {
 	newTasks := make([]task, 0, 0)
 	fmt.Printf("[INFO] Batch [%d] Processing url %s\n", t.batchId, t.url)
 	return newTasks
+}
+
+/*
+ * Utility functions
+ */
+
+func makeMetadata(t *task) map[string]string {
+	metadata := make(map[string]string)
+	metadata["url"] = t.url
+	metadata["id"] = strconv.Itoa(t.taskId)
+	return metadata
+}
+
+func writeMdFile(t *task, markdown string) error {
+	mdPath := filepath.Join(FPATH_TMP, strconv.Itoa(t.taskId)+".md")
+	mdFile, err := os.Create(mdPath)
+	if err != nil {
+		return err
+	}
+	mdFile.WriteString(markdown)
+
+	return nil
+}
+
+func writeJsonFile(t *task) error {
+	jsonPath := filepath.Join(FPATH_TMP, strconv.Itoa(t.taskId)+".json")
+	jsonFile, err := os.Create(jsonPath)
+	if err != nil {
+		return err
+	}
+	jsonData, err := json.MarshalIndent(makeMetadata(t), "", "    ")
+	jsonFile.Write(jsonData)
+
+	return nil
 }
