@@ -12,6 +12,7 @@ import (
 
 	"golang.org/x/net/html"
 	"golang.org/x/net/html/atom"
+	"github.com/PuerkitoBio/goquery"
 )
 
 const (
