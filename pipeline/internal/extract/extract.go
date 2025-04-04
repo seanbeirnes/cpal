@@ -261,6 +261,16 @@ func makeMetadata(t *task) map[string]string {
 	metadata := make(map[string]string)
 	metadata["url"] = t.url
 	metadata["id"] = strconv.Itoa(t.taskId)
+	taskType := ""
+	switch t.taskType {
+	case TYPE_KB_EXTRACT:
+		taskType = "kb"
+	case TYPE_FORUM_EXTRACT:
+		taskType = "forum"
+	default:
+		log.Printf("[WARN] Unknown task type for JSON data conversion: %s\n", t.url)
+	}
+	metadata["type"] = taskType
 	return metadata
 }
 
