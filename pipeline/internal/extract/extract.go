@@ -21,9 +21,10 @@ const (
 )
 
 const (
-	TYPE_KB         = iota
-	TYPE_KB_EXTRACT = iota
-	TYPE_FORUM      = iota
+	TYPE_KB            = iota
+	TYPE_KB_EXTRACT    = iota
+	TYPE_FORUM         = iota
+	TYPE_FORUM_EXTRACT = iota
 )
 
 type Config struct {
@@ -142,6 +143,8 @@ func processTask(t task) []task {
 		handleKBExtractTask(&t, doc)
 	case TYPE_FORUM:
 		return handleForumTask(&t, doc)
+	case TYPE_FORUM_EXTRACT:
+		handleForumExtractTask(&t, doc)
 	default:
 		log.Fatalf("[ERROR] no handler for url %s", t.url)
 	}
@@ -189,8 +192,65 @@ func handleKBExtractTask(t *task, doc *goquery.Document) {
 
 func handleForumTask(t *task, doc *goquery.Document) []task {
 	newTasks := make([]task, 0, 0)
-	fmt.Printf("[INFO] Batch [%d] Processing url %s\n", t.batchId, t.url)
+	fmt.Printf("[INFO] Batch [%d] Processing forum url %s\n", t.batchId, t.url)
+	doc.Find(".solved-msg h3 > a").Each(func(i int, s *goquery.Selection) {
+		url, _ := s.Attr("href")
+		newTasks = append(newTasks, task{url: strings.Trim(url, " "), taskType: TYPE_FORUM_EXTRACT})
+	})
+	doc.Find(".lia-paging-page-next.lia-component-next > a").Each(func(i int, s *goquery.Selection) {
+		url, ok := s.Attr("href")
+		if ok {
+			msg := fmt.Sprintf("[INFO] Found new forum page: %s", url)
+			fmt.Println(msg)
+			log.Println(msg)
+			newTasks = append(newTasks, task{url: strings.Trim(url, " "), taskType: TYPE_FORUM})
+		}
+	})
+
 	return newTasks
+}
+
+func handleForumExtractTask(t *task, doc *goquery.Document) {
+	fmt.Printf("[INFO] Batch [%d] Extracting forum data from %s\n", t.batchId, t.url)
+	concatMarkdown := "## Question\n"
+	doc.Find("#bodyDisplay .lia-message-body-content > p").Each(func(i int, s *goquery.Selection) {
+		html, err := s.Html()
+		if err != nil {
+			log.Fatalf("error: %s\n", err.Error())
+		}
+		markdown, err := htmltomarkdown.ConvertString(html)
+		if err != nil {
+			log.Fatalf("error: %s\n", err.Error())
+		}
+		concatMarkdown += markdown
+	})
+
+	concatMarkdown += "\n\n## Answers\n"
+	doc.Find("#threadeddetailmessagelist .lia-message-body-content").Each(func(i int, s *goquery.Selection) {
+		html, err := s.Html()
+		if err != nil {
+			log.Fatalf("error: %s\n", err.Error())
+		}
+		markdown, err := htmltomarkdown.ConvertString(html)
+		if err != nil {
+			log.Fatalf("error: %s\n", err.Error())
+		}
+		concatMarkdown += markdown
+	})
+
+	err := writeMdFile(t, concatMarkdown)
+	if err != nil {
+		msg := fmt.Sprintf("[ERROR] Could not write md file for %s\n", t.url)
+		log.Fatalln(msg)
+		fmt.Println(msg)
+	}
+
+	err = writeJsonFile(t)
+	if err != nil {
+		msg := fmt.Sprintf("[ERROR] Could not write json file for %s\n", t.url)
+		log.Fatalln(msg)
+		fmt.Println(msg)
+	}
 }
 
 /*
