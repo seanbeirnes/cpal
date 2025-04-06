@@ -160,7 +160,8 @@ func handleKBTask(t *task, doc *goquery.Document) []task {
 	selection := doc.Find(".toc-main")
 	selection.First().Find("a").Each(func(i int, s *goquery.Selection) {
 		url, _ := s.Attr("href")
-		newTasks = append(newTasks, task{url: strings.Trim(url, " "), urlTitle: s.Text(), taskType: TYPE_KB_EXTRACT})
+		text := strings.TrimSpace(s.Text())
+		newTasks = append(newTasks, task{url: strings.Trim(url, " "), urlTitle: text, taskType: TYPE_KB_EXTRACT})
 	})
 
 	return newTasks
@@ -197,7 +198,8 @@ func handleForumTask(t *task, doc *goquery.Document) []task {
 	fmt.Printf("[INFO] Batch [%d] Processing forum url %s\n", t.batchId, t.url)
 	doc.Find(".solved-msg h3 > a").Each(func(i int, s *goquery.Selection) {
 		url, _ := s.Attr("href")
-		newTasks = append(newTasks, task{url: strings.Trim(url, " "), urlTitle: s.Text(), taskType: TYPE_FORUM_EXTRACT})
+		text := strings.TrimSpace(s.Text())
+		newTasks = append(newTasks, task{url: strings.Trim(url, " "), urlTitle: text, taskType: TYPE_FORUM_EXTRACT})
 	})
 	doc.Find(".lia-paging-page-next.lia-component-next > a").Each(func(i int, s *goquery.Selection) {
 		url, ok := s.Attr("href")
