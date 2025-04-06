@@ -40,6 +40,7 @@ type task struct {
 	url      string
 	batchId  int
 	taskId   int
+	urlTitle string
 }
 
 func LoadConfig(filename string) (*Config, error) {
@@ -159,7 +160,7 @@ func handleKBTask(t *task, doc *goquery.Document) []task {
 	selection := doc.Find(".toc-main")
 	selection.First().Find("a").Each(func(i int, s *goquery.Selection) {
 		url, _ := s.Attr("href")
-		newTasks = append(newTasks, task{url: strings.Trim(url, " "), taskType: TYPE_KB_EXTRACT})
+		newTasks = append(newTasks, task{url: strings.Trim(url, " "), urlTitle: s.Text(), taskType: TYPE_KB_EXTRACT})
 	})
 
 	return newTasks
@@ -196,7 +197,7 @@ func handleForumTask(t *task, doc *goquery.Document) []task {
 	fmt.Printf("[INFO] Batch [%d] Processing forum url %s\n", t.batchId, t.url)
 	doc.Find(".solved-msg h3 > a").Each(func(i int, s *goquery.Selection) {
 		url, _ := s.Attr("href")
-		newTasks = append(newTasks, task{url: strings.Trim(url, " "), taskType: TYPE_FORUM_EXTRACT})
+		newTasks = append(newTasks, task{url: strings.Trim(url, " "), urlTitle: s.Text(), taskType: TYPE_FORUM_EXTRACT})
 	})
 	doc.Find(".lia-paging-page-next.lia-component-next > a").Each(func(i int, s *goquery.Selection) {
 		url, ok := s.Attr("href")
@@ -260,7 +261,8 @@ func handleForumExtractTask(t *task, doc *goquery.Document) {
 
 func makeMetadata(t *task) map[string]string {
 	metadata := make(map[string]string)
-	metadata["url"] = t.url
+	metadata["source_url"] = t.url
+	metadata["source_url_title"] = t.urlTitle
 	metadata["id"] = strconv.Itoa(t.taskId)
 	taskType := ""
 	switch t.taskType {
