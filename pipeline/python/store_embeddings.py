@@ -111,12 +111,14 @@ def main() -> int:
         vec = get_vectors_from_file(id)
         if len(batch) >= MAX_BATCH_SIZE:
             uploaded += upload_vectors(batch)
+            print(f"{uploaded}/{len(ids)} processed...\r")
+            batch = []
         batch.append(vec)
-        print(f"{uploaded}/{len(ids)} processed...\r")
         
     # Upload remaining vecs in batch
     if len(batch) > 0:
         uploaded += upload_vectors(batch)
+        print(f"{uploaded}/{len(ids)} processed...\r")
 
     print("[INFO] Process finished")
     return 0
