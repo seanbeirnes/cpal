@@ -1,9 +1,12 @@
-import sys
 import os
+import sys
+import json
+from sentence_transformers import SentenceTransformer, util
 
 WORKING_DIR = os.path.join(".","..","tmp")
 INPUT_DIR = "chunks"
 OUTPUT_DIR = "embeddings"
+DIMENSIONS = 384
 
 class bcolors:
     HEADER = '\033[95m'
@@ -15,6 +18,8 @@ class bcolors:
     ENDC = '\033[0m'
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
+
+model = SentenceTransformer("sentence-transformers/multi-qa-MiniLM-L6-cos-v1")
 
 def process_file_pairs(chunk_id):
     """
@@ -34,8 +39,24 @@ def process_file_pairs(chunk_id):
             json_content = json_file.read()
     except:
         print(f"[ERROR] Could not open {txt_path} OR {json_path}")
-    print(txt_content)
-    print(json_content)
+
+    embeddings = model.encode(txt_content)
+    metadata = json.loads(json_content)
+    metadata["text"] = txt_content
+    metadata["chunk_id"] = chunk_id
+    output = {}
+    output["embeddings"] = embeddings.tolist()
+    output["metadata"] = metadata
+
+    assert(len(output["embeddings"]) == DIMENSIONS)
+
+    output_path = os.path.join(WORKING_DIR, OUTPUT_DIR, f"{chunk_id}.json")
+    try:
+        with open(output_path, "w") as output_file:
+            json.dump(output, output_file, indent=4)
+    except:
+        print(f"{bcolors.FAIL}[ERROR] Could not save json file {output_path}{bcolors.ENDC}")
+
 
 def get_file_ids() -> set:
     """
