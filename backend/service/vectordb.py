@@ -5,10 +5,10 @@ from dotenv import load_dotenv
 from pinecone.grpc import PineconeGRPC as Pinecone
 from model.match import Match, Metadata
 
+load_dotenv()
+
 DIMENSIONS = 384
 MAX_BATCH_SIZE = 100
-
-load_dotenv()
 
 INDEX_NAME = os.environ['VECTOR_DB_INDEX_NAME']
 pc = Pinecone(api_key=os.environ['VECTOR_DB_API_KEY'])

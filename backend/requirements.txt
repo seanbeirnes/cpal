@@ -1,5 +1,6 @@
 dotenv
 protobuf
+google-genai
 google-api-core
 grpcio
 fastapi

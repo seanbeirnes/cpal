@@ -3,7 +3,9 @@ from model.event import QAEvent
 from typing import Optional
 import os
 
-DATABASE_URL: str = os.getenv("DATABASE_URL")
+DATABASE_URL: str | None = os.getenv("DATABASE_URL")
+if DATABASE_URL is None:
+    raise
 
 engine = create_engine(DATABASE_URL, echo=True)
 
