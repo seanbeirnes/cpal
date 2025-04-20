@@ -3,6 +3,7 @@ secret/
 build/
 tmp/
 dist/
+static/
 main
 
 ### Go ###

@@ -1,0 +1,11 @@
+dotenv
+protobuf
+google-genai
+google-api-core
+grpcio
+fastapi
+sqlmodel
+psycopg2
+uvicorn
+pinecone
+sentence-transformers
