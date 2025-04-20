@@ -2,9 +2,6 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from web.api import router as api_router
-from dotenv import load_dotenv
-
-load_dotenv()
 
 CURR_DIR = Path(__file__).resolve().parent
 STATIC_DIR = Path(CURR_DIR,"static").resolve()

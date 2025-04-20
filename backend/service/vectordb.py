@@ -1,19 +1,23 @@
 import os
 import sys
 
-from dotenv import load_dotenv
 from pinecone.grpc import PineconeGRPC as Pinecone
 from model.match import Match, Metadata
-
-load_dotenv()
 
 DIMENSIONS = 384
 MAX_BATCH_SIZE = 100
 
-INDEX_NAME = os.environ['VECTOR_DB_INDEX_NAME']
-pc = Pinecone(api_key=os.environ['VECTOR_DB_API_KEY'])
+INDEX_NAME: str | None = os.environ['VECTOR_DB_INDEX_NAME']
+API_KEY: str | None = os.environ['VECTOR_DB_API_KEY']
+if INDEX_NAME == "" or INDEX_NAME is None:
+    print("[ERROR] Failed to retrieve vector database index name")
+if API_KEY == "" or API_KEY is None:
+    print("[ERROR] Failed to retrieve vector database api key")
+
+pc = Pinecone(api_key=API_KEY)
 
 if not pc.has_index(INDEX_NAME):
+    print("[ERROR] Vector database index not found")
     sys.exit(1)
 
 INDEX_HOST = pc.describe_index(name=INDEX_NAME)["host"] 

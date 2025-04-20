@@ -5,14 +5,14 @@ from util import sanitize
 router = APIRouter()
 
 @router.get("/livez")
-def serv_api():
+async def serv_api():
     return {
         "status":"ok",
         "message":"all systems are functioning properly"
     }
 
 @router.post("/query")
-def process_query(query:str = Body(embed=True)):
+async def process_query(query:str = Body(embed=True)):
     try:
         query = sanitize.sanitize_query(query)
     except:
@@ -89,6 +89,6 @@ def process_query(query:str = Body(embed=True)):
         events.log_qa(question=query, chunk_ids=str(chunk_ids), answer=answer)
 
         return {"answer":answer,"sources":sources}
-    except:
-        print(f"[ERROR]: Answer retrieval failed.")
+    except Exception as err:
+        print(f"[ERROR]: Answer retrieval failed: {err}")
         return {"answer": "I am sorry. An error occured. Please try again.", "sources":[]}
