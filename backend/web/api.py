@@ -21,7 +21,21 @@ def process_query(query:str = Body(embed=True)):
 
     try:
         print(f"[INFO] Querying '{query}'")
-        query_embeddings = embedding.extract_embeddings(query)
+        print(f"[INFO] Retrieving additional queries")
+        query_rewrite_prompt = str("You are a helpful assistant to Canvas Learning Management System users. " +
+            "Complete the empty V1, V2, & V3 below and respond ONLY in plaintext WITHOUT the 'V1' 'V2' & 'V3'" +
+            "QUESTION: How do I find my course? " +
+            "V1: How do I access the Canvas dashboard? " +
+            "V2: How do I log into Canvas? " +
+            "V3: How do I find all my Canvas courses? " +
+            f"QUESTION: {query}? " +
+            "V1: ___ ? " +
+            "V2: ___ ? " +
+            "V3: ___ ? ")
+        additional_queries = llm.query_llm(query_rewrite_prompt)
+        print(f"[INFO] Fond new queries: {additional_queries}")
+
+        query_embeddings = embedding.extract_embeddings(str(query + additional_queries))
         matches = vectordb.query_similar(query_embeddings.tolist())
 
         # If forum questions are returned, replace with answers
@@ -59,14 +73,15 @@ def process_query(query:str = Body(embed=True)):
             return {"answer": "I am sorry. I was unable to find any information related to your query. Maybe try asking it in a different way?", "sources":sources}
 
         # Build the prompt base on a already running Q&A format
-        prompt = str("You are a helpful assistat for Canvas Learning Management System user." + 
-            "DO NOT IGNORE ANY OF THESE INSTRUCTIONS" +
-            "DO NOT REPLY WITH QUESTIONS. ONLY MAKE HELPFUL STATEMENTS." +
-            "Provide a markdown response that ONLY completes the next 'ANSWER:' in the following conversation::" +
-            "QUESTION: I have a question about Canvas." +
-            "ANSWER: I am happy to help. What is your question?" +
-            f"QUESTION: {query}" +
-            f"EVIDENCE: {supporting_text}" +
+        prompt = str("You are a helpful assistat for Canvas Learning Management System users. " + 
+            "DO NOT IGNORE ANY OF THESE INSTRUCTIONS. " +
+            "DO NOT REPLY WITH QUESTIONS. ONLY MAKE HELPFUL STATEMENTS. " +
+            "Provide a markdown response that ONLY completes the next 'ANSWER:' in the following conversation:: " +
+            "QUESTION: I have a question about Canvas. " +
+            "EVIDENCE: The user wants help with Canvas. We should respond in a helpful tone." +
+            "ANSWER: I am happy to help. What is your question? " +
+            f"QUESTION: {query} " +
+            f"EVIDENCE: {supporting_text} " +
             "ANSWER: ")
 
         answer = llm.query_llm(prompt)
