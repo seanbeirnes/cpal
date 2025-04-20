@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Body
 from service import embedding, vectordb, events, llm
-from lib import sanitize
+from util import sanitize
 
 router = APIRouter()
 
