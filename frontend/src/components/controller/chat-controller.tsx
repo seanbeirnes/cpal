@@ -2,7 +2,7 @@ import UserChat from "@/components/chat/user-chat"
 import ChatComposerController from "./chat-composer-controller"
 import { AnswerChat, AnswerResponse } from "@/components/chat/answer-chat"
 import { useState } from "react"
-import axios from "axios"
+import axios, { AxiosResponse } from "axios"
 import { useMutation } from "@tanstack/react-query"
 import { LoaderCircle } from "lucide-react"
 
@@ -14,21 +14,29 @@ function ChatController() {
     const [chats, setChats] = useState<(AnswerResponse | string)[]>([FIRST_ANSWER])
     const [question, setQuestion] = useState<string>("")
 
+    const scrollToBottom = (delay: number) => {
+        setTimeout(() => {
+            window.scrollTo(0, document.body.scrollHeight);
+        }, delay)
+    }
+
+
     const askCallback = (question: string) => {
         setChats(prevChats => [...prevChats, question])
         setQuestion(question)
+        scrollToBottom(50)
         askMutation.mutate(question)
     }
 
     const ask = (question: string) => {
-        return axios.post(QUERY_API_ENDPOINT, { "query": question })
+        return axios.post<AnswerResponse>(QUERY_API_ENDPOINT, { "query": question })
     }
 
     const askMutation = useMutation({
         mutationFn: ask,
-        onSuccess: (data) => {
+        onSuccess: (data: AxiosResponse<AnswerResponse>) => {
             setQuestion("")
-            setChats(prevChats => [...prevChats, data as AnswerResponse])
+            setChats(prevChats => [...prevChats, data.data])
         },
         onError: (error) => {
             console.error(error)
@@ -39,14 +47,14 @@ function ChatController() {
     return (
         <>
             <div className="w-full flex flex-col p-4 mb-60">
-                {chats.map((chat: (AnswerResponse | string)) => {
+                {chats.map((chat: (AnswerResponse | string), index: number) => {
                     if (typeof (chat) == "string") {
                         return (
-                            <UserChat message={chat} />
+                            <UserChat key={`chat-${index}`} message={chat} />
                         )
                     }
                     return (
-                        <AnswerChat answer={chat} />
+                        <AnswerChat key={`chat-${index}`} answer={chat} />
                     )
                 })}
                 {(question.length > 0) &&
