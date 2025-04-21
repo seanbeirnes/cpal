@@ -6,7 +6,6 @@ import axios, { AxiosResponse } from "axios"
 import { useMutation } from "@tanstack/react-query"
 import { LoaderCircle } from "lucide-react"
 
-
 const QUERY_API_ENDPOINT = "/api/query"
 const FIRST_ANSWER: AnswerResponse = { "answer": "Hello there!\n\nHow can I help you with Canvas today?", "sources": [] }
 
@@ -46,7 +45,7 @@ function ChatController() {
 
     return (
         <>
-            <div className="w-full flex flex-col p-4 mb-60">
+            <div className="w-full flex flex-col p-4 mb-96">
                 {chats.map((chat: (AnswerResponse | string), index: number) => {
                     if (typeof (chat) == "string") {
                         return (

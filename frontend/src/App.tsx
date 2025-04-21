@@ -1,19 +1,58 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import { createContext } from "react"
+import { LoaderCircle } from "lucide-react"
+import axios from "axios"
+import { useQuery } from "@tanstack/react-query"
 import Header from "./components/layout/header"
 import ChatController from "./components/controller/chat-controller"
 
-const queryClient = new QueryClient()
+export interface AppConfig {
+    captcha: string
+}
+
+export const ConfigContext = createContext<AppConfig | undefined>(undefined)
+
+const fetchConfig = async () => {
+    return await axios.get<AppConfig>("/api/config")
+}
 
 function App() {
-    return (
-        <QueryClientProvider client={queryClient}>
+    const { data, isLoading, isError, error } = useQuery({
+        queryKey: ["app-config"],
+        queryFn: fetchConfig
+    })
+
+    if (isError) {
+        console.error(error)
+        return (
             <div className="min-h-svh">
+                <Header />
+                <main className="md:max-w-2xl m-auto">
+                    <p>Sorry... Service is unavailable right now</p>
+                </main>
+            </div>
+        )
+    }
+
+    if (isLoading || !data) {
+        return (
+            <div className="min-h-svh">
+                <Header />
+                <main className="md:max-w-2xl m-auto">
+                    <LoaderCircle className="text-rose-200 animate-spin" />
+                </main>
+            </div>
+        )
+    }
+
+    return (
+        <div className="min-h-svh">
+            <ConfigContext.Provider value={data.data}>
                 <Header />
                 <main className="md:max-w-2xl m-auto">
                     <ChatController />
                 </main>
-            </div>
-        </QueryClientProvider>
+            </ConfigContext.Provider>
+        </div>
     )
 }
 

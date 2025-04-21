@@ -1,3 +1,5 @@
+import os
+
 from fastapi import APIRouter, Body
 from service import embedding, vectordb, events, llm
 from util import sanitize
@@ -9,6 +11,13 @@ async def serv_api():
     return {
         "status":"ok",
         "message":"all systems are functioning properly"
+    }
+
+@router.get("/config")
+async def serv_config():
+    CAPTCHA_SITE_KEY = os.getenv("CAPTCHA_SITE_KEY") 
+    return {
+        "captcha":CAPTCHA_SITE_KEY
     }
 
 @router.post("/query")
