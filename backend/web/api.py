@@ -1,5 +1,7 @@
+import os
+
 from fastapi import APIRouter, Body
-from service import embedding, vectordb, events, llm
+from service import captcha, embedding, vectordb, events, llm
 from util import sanitize
 
 router = APIRouter()
@@ -11,13 +13,23 @@ async def serv_api():
         "message":"all systems are functioning properly"
     }
 
+@router.get("/config")
+async def serv_config():
+    CAPTCHA_SITE_KEY = os.getenv("CAPTCHA_SITE_KEY") 
+    return {
+        "captcha":CAPTCHA_SITE_KEY
+    }
+
 @router.post("/query")
-async def process_query(query:str = Body(embed=True)):
+async def process_query(query:str = Body(embed=True), captcha_token:str = Body(embed=True)):
     try:
         query = sanitize.sanitize_query(query)
     except:
         print(f"[WARN]: Query sanitization failed. Rejecting...")
         return {"answer": "I am sorry. I am only designed to answer questions related to Canvas and its commonly integrated applications.", "sources":[]}
+
+    if not captcha.verify(captcha_token):
+        return {"answer": "I am sorry. An error occured...", "sources":[]}
 
     try:
         print(f"[INFO] Querying '{query}'")
