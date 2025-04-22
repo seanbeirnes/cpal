@@ -37,5 +37,5 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 EXPOSE 8080/tcp
 
-CMD ["fastapi", "run", "main.py", "--port", "8080"]
+CMD ["fastapi", "run", "main.py", "--host", "0.0.0.0", "--port", "8080"]
 
