@@ -35,4 +35,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1\
     PATH="/opt/venv/bin:$PATH"
 
-CMD ["fastapi", "run", "main.py", "--port", "80"]
+EXPOSE 8080/tcp
+
+CMD ["fastapi", "run", "main.py", "--port", "8080"]
+
