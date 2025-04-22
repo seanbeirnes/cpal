@@ -46,6 +46,7 @@ function App() {
 
     return (
         <div className="min-h-svh">
+            <script async src={`https://www.google.com/recaptcha/api.js?render=${data.data.captcha}`}></script>
             <ConfigContext.Provider value={data.data}>
                 <Header />
                 <main className="md:max-w-2xl m-auto">

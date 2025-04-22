@@ -1,15 +1,18 @@
 import UserChat from "@/components/chat/user-chat"
 import ChatComposerController from "./chat-composer-controller"
 import { AnswerChat, AnswerResponse } from "@/components/chat/answer-chat"
-import { useState } from "react"
+import { useContext, useState } from "react"
 import axios, { AxiosResponse } from "axios"
 import { useMutation } from "@tanstack/react-query"
 import { LoaderCircle } from "lucide-react"
+import { ConfigContext } from "@/App"
 
 const QUERY_API_ENDPOINT = "/api/query"
 const FIRST_ANSWER: AnswerResponse = { "answer": "Hello there!\n\nHow can I help you with Canvas today?", "sources": [] }
 
 function ChatController() {
+    const configContext = useContext(ConfigContext)
+
     const [chats, setChats] = useState<(AnswerResponse | string)[]>([FIRST_ANSWER])
     const [question, setQuestion] = useState<string>("")
 
@@ -27,8 +30,17 @@ function ChatController() {
         askMutation.mutate(question)
     }
 
-    const ask = (question: string) => {
-        return axios.post<AnswerResponse>(QUERY_API_ENDPOINT, { "query": question })
+    const ask = (question: string): Promise<AxiosResponse<AnswerResponse>> => {
+        return new Promise((resolve, reject) => {
+            if (configContext === undefined) {
+                return reject()
+            }
+            grecaptcha.ready(() => {
+                grecaptcha.execute(configContext?.captcha, { action: 'submit' }).then((token: string) => {
+                    axios.post<AnswerResponse>(QUERY_API_ENDPOINT, { "query": question, "captcha_token": token }).then(resolve).catch(reject)
+                })
+            })
+        })
     }
 
     const askMutation = useMutation({
