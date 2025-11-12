@@ -98,7 +98,10 @@ async def process_query(query:str = Body(embed=True), captcha_token:str = Body(e
 
         answer = llm.query_llm(prompt)
 
-        events.log_qa(question=query, chunk_ids=str(chunk_ids), answer=answer)
+        try:
+            events.log_qa(question=query, chunk_ids=str(chunk_ids), answer=answer)
+        except Exception as err:
+            print(f"[ERROR] Failed to log question and answer: {err}")
 
         return {"answer":answer,"sources":sources}
     except Exception as err:

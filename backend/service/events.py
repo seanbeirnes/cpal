@@ -5,9 +5,9 @@ import os
 
 DATABASE_URL: str | None = os.getenv("DATABASE_URL")
 if DATABASE_URL is None:
-    raise
+    raise ValueError("DATABASE_URL environment variable is not set")
 
-engine = create_engine(DATABASE_URL, echo=True)
+engine = create_engine(DATABASE_URL, echo=True, pool_pre_ping=True)
 
 def log_qa(
     question: Optional[str] = None,
